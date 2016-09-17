@@ -57,6 +57,18 @@ double bs_delta(double s, double k, double v, double t, int is_call, double ird,
         return phi(d1) - 1.0;
 }
 
+double bs_call(double s, double k, double v, double t, double ird, double irf){
+    return bs_price(s, k, v, t, 1, ird, irf, 0);
+}
+
+double bs_put(double s, double k, double v, double t, double ird, double irf){
+    return bs_price(s, k, v, t, 0, ird, irf, 0);
+}
+
+double bs_str(double s, double k, double v, double t, double ird, double irf){
+    return bs_call(s, k, v, t, ird, irf) + bs_put(s, k, v, t, ird, irf);
+}
+
 double implied_vol_bs(double p, double s, double k, double t, int is_call, double ird, double irf, int is_prem_for){
     double hv = 2.00;
     double epsilon = 0.00000001;
@@ -74,38 +86,21 @@ double implied_vol_bs(double p, double s, double k, double t, int is_call, doubl
     return mv;
 }
 
-double be_vol(double *spot_series, double k, double hv, double t, double ird, double irf){
-    double delta = 0.0;
-    double hedge_cost = 0.0;
-    double opt_payout;
-    int ns = 145;
-    double df_dom = df(ird, t);
-    double fwd = spot_series[0] * df(ird, t) / df(irf, t);
-    int is_call;
-    if(fwd < k){
-        is_call = 1;
-        opt_payout = fmax(0, spot_series[ns-1] - k) / spot_series[ns-1];
+double implied_vol_str(double p, double s, double k, double t, double ird, double irf){
+    double hv = 2.00;
+    double epsilon = 0.00000001;
+    double lv = 0.00;
+    int i = 0;
+    double mv = 888.88;
+    while(((hv - lv) >= epsilon) && (i < 100)){
+        mv = (lv + hv) / 2.0;
+        if(bs_str(s, k, mv, t, ird, irf) > p)
+            hv = mv;
+        else
+            lv = mv;
+        ++i;
     }
-    else{
-        is_call = 0;
-        opt_payout = fmax(0, k - spot_series[ns-1]) / spot_series[ns-1];
-    }
-    int i;
-    double temp_exp;
-    double fwd_factor;
-    for(i = 1; i < ns; ++i){
-        temp_exp = t * (ns - i) / (ns - 1);
-        fwd_factor = df(ird, temp_exp) / df(irf, temp_exp);
-        double temp_delta = bs_delta(spot_series[i-1], k, hv, temp_exp, is_call, ird, irf) * -k;
-        hedge_cost += (temp_delta - delta) / (spot_series[i-1]*fwd_factor);
-        delta = temp_delta;
-    }
-    hedge_cost -= delta/spot_series[ns-1];
-    double option_premium = (hedge_cost + opt_payout) * df_dom;
-    if(option_premium > 0)
-        return implied_vol_bs(option_premium, spot_series[0], k, t, is_call, ird, irf, 0);
-    else
-        return -implied_vol_bs(-option_premium, spot_series[0], k, t, is_call, ird, irf, 0);
+    return mv;
 }
 
 double bs_strike(double s, double delta, double v, double t, int is_call, double ird, double irf, int is_prem_for){
@@ -114,4 +109,19 @@ double bs_strike(double s, double delta, double v, double t, int is_call, double
         return f/exp(norm_CDF_inv(delta)*v*sqrt(t) - v*v*t/2.0);
     else 
         return f/exp(norm_CDF_inv(1 - delta)*v*sqrt(t) - v*v*t/2.0);
+}
+
+double realized_vol(double *prices, double t_yrs){
+    double sum_ret = 0.0;
+    int len_prices = 0;
+    double *p = prices;
+    
+    while(*p){
+        ++len_prices;
+        ++p;
+    }
+    int i;
+    for(i = 1; i < len_prices; ++i)
+        sum_ret += pow(prices[i]/prices[i-1] -1, 2);
+    return sqrt(sum_ret/t_yrs);
 }
