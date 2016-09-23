@@ -13,7 +13,7 @@ double phi(double x){
     double xx = fabs(x) / sqrt(2.0);
     double t = 1.0 / (1.0 + p * xx);
     double y;
-    y = 1.0 - (((((a[4]*t + a[3])*t) + a[2])*t + a[1])*t + a[0])*t*exp(-xx*xx);
+    y = 1.0-(((((a[4]*t + a[3])*t) + a[2])*t + a[1])*t +a[0])*t*exp(-xx*xx);
     return 0.5*(1.0 + sign*y);
 }
 
@@ -23,12 +23,12 @@ double norm_CDF_inv(double p){
     double t;
     if(p < 0.5){
         t = sqrt(-2.0 * log(p));
-        t -= ((c[2]*t + c[1])*t + c[0])/(((d[2]*t + d[1])*t + d[0])*t + 1.0);
+        t -=((c[2]*t + c[1])*t + c[0])/(((d[2]*t + d[1])*t + d[0])*t + 1.0);
         return -t;
     }
     else{
         t = sqrt(-2.0 * log(1-p));
-        t -= ((c[2]*t + c[1])*t + c[0])/(((d[2]*t + d[1])*t + d[0])*t + 1.0);
+        t -=((c[2]*t + c[1])*t + c[0])/(((d[2]*t + d[1])*t + d[0])*t + 1.0);
         return t;
     }
 }
@@ -71,7 +71,7 @@ double bs_str(double s, double k, double v, double t, double ird, double irf){
 
 double implied_vol_bs(double p, double s, double k, double t, int is_call, double ird, double irf, int is_prem_for){
     double hv = 2.00;
-    double epsilon = 0.00000001;
+    double epsilon = 1.0e-8;
     double lv = 0.00;
     int i = 0;
     double mv = 888.88;
@@ -88,7 +88,7 @@ double implied_vol_bs(double p, double s, double k, double t, int is_call, doubl
 
 double implied_vol_str(double p, double s, double k, double t, double ird, double irf){
     double hv = 2.00;
-    double epsilon = 0.00000001;
+    double epsilon = 1.0e-8;
     double lv = 0.00;
     int i = 0;
     double mv = 888.88;
